@@ -14,14 +14,12 @@ int C_Net::start(){
       return(C_NET_ERROR);
    }
 
-   CA_Arp.create(1, 5000);
-   
    return(C_NET_READY);
 }
 //////////////////////////////////////////////////////////////////////////////////
 // [ send ]
 //////////////////////////////////////////////////////////////////////////////////
-int C_Net::send(S_Net_Interface* pSInterface, int cPackets, int cSleep){
+int C_Net::send(const S_Net_Interface* pSInterface, int cPackets, int cSleep){
   
    if(!pSInterface) return(C_NET_ERROR);
 
@@ -41,11 +39,11 @@ int C_Net::send(S_Net_Interface* pSInterface, int cPackets, int cSleep){
    
    ////////////////////////////////////
    
-   memcpy(IP_SOURCE,  &pSInterface->_dw_IP,      SIZE_IP);
-   memcpy(IP_REQUEST, &pSInterface->_dw_Network, SIZE_IP);
+   memcpy(IP_SOURCE,  &pSInterface->dw_IP,      SIZE_IP);
+   memcpy(IP_REQUEST, &pSInterface->dw_Network, SIZE_IP);
    
-   memcpy(MAC_SOURCE,  pSInterface->_uc_MAC, SIZE_MAC);
-   memcpy(MAC_ETH_S,   pSInterface->_uc_MAC, SIZE_MAC);
+   memcpy(MAC_SOURCE,  pSInterface->uc_MAC, SIZE_MAC);
+   memcpy(MAC_ETH_S,   pSInterface->uc_MAC, SIZE_MAC);
    
    memcpy(MAC_REQUEST, MAC_BROADCAST, SIZE_MAC);
    memcpy(MAC_ETH_D,   MAC_BROADCAST, SIZE_MAC);
@@ -71,9 +69,8 @@ int C_Net::send(S_Net_Interface* pSInterface, int cPackets, int cSleep){
    CDA_Result.clear();
    
    CNRaw.open(pSInterface);
-   CNRaw.start(C_NET_ID_ARP, &CA_Arp);
+   CNRaw.start(C_NET_ID_ARP, &CA_Arp[0], C_NET_BUFFER);
 
-   
    for(int n = 1; n < 255; n++){
    
       pRCV_arp->ARP_IP_D[3] = n;
@@ -81,8 +78,8 @@ int C_Net::send(S_Net_Interface* pSInterface, int cPackets, int cSleep){
       CNRaw.send(pData, cData);
    
       for(int n = 0; n < cPackets; n++){
-        CNRaw.send(pData, cData);
-        usleep(cSleep * 1000);
+         CNRaw.send(pData, cData);
+         usleep(cSleep * 1000);
       }
   
       usleep(10000);
@@ -106,22 +103,18 @@ void C_Net::on_arp_data(int id, int cData){
    if(id == C_NET_ID_ARP){
      
       if(cData < cETHERNET_HEADER + cARP_HEADER) return;
-      
-      UCHAR* pBuffer = (UCHAR*)CA_Arp.getpBuffer();
+
+      UCHAR* pBuffer = &CA_Arp[0];
       
       ETHERNET_HEADER* pRCV_ethhdr = (ETHERNET_HEADER*)pBuffer;
       ARP_HEADER*      pRCV_arp    = (ARP_HEADER*)(pBuffer + cETHERNET_HEADER);
    
       if(pRCV_ethhdr->Type == ETH_TYP_ARP){
          if(pRCV_arp->ARP_OpCode == ARP_RESPONSE){
-            C_Array* pCA_Response = 0;
-            if(!(pCA_Response = CDA_Result.addItem(1, sizeof(S_Arp_Result)))) return;
-
-            S_Arp_Result* pSArpResult = 0;
-            if(!(pSArpResult = (S_Arp_Result*)pCA_Response->getpBuffer())) return;
-
-            memcpy(pSArpResult->MAC, pRCV_arp->ARP_MAC_S, SIZE_MAC);
-            memcpy(pSArpResult->IP,  pRCV_arp->ARP_IP_S,  SIZE_IP);
+            S_Arp_Result SArpResult;
+            memcpy(SArpResult.MAC, pRCV_arp->ARP_MAC_S, SIZE_MAC);
+            memcpy(SArpResult.IP,  pRCV_arp->ARP_IP_S,  SIZE_IP);
+            CDA_Result.push_back(SArpResult);
          }
       }
    }

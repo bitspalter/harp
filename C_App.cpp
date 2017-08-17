@@ -37,19 +37,11 @@ C_App::C_App(){
    
    /////////////////////////////////////////////
    //Fill the interface combo:
-   C_DArray*        pDA_Interface = 0;
-   S_Net_Interface* pSInterface   = 0;
+   const vector<S_Net_Interface>* pDA_Interface = CNet.CNInterface.get_pDA_Interface();
+
+   for(auto iface : *pDA_Interface) scombo.interface.append(iface.ps_Name);
    
-   if((pDA_Interface = CNet.CNInterface.get_pDA_Interface())){
-      for(int n = 0; n < pDA_Interface->getnItems(); n++){
-         S_C_DArray* pCA_F = pDA_Interface->getpItem(n);
-         if((pSInterface = (S_Net_Interface*)pCA_F->pData->getpBuffer()))
-	    scombo.interface.append(pSInterface->_ps_Name);
-      }
-   }else{
-      cout << "ERROR: CNInterface.get_pDA_Interface" << endl;
-      return;
-   }
+   /////////////////////////////////////////////////////////////////////
    
    scombo.interface.set_active(CNet.CNInterface.get_First_Active());
    scombo.interface.set_size_request(100, 30); 
@@ -104,23 +96,16 @@ C_App::~C_App(){
 // [ on_button_send ]
 //////////////////////////////////////////////////////////////////////////////////
 void C_App::on_button_send(){
-   C_DArray*        pDA_Interface = 0;
-   S_Net_Interface* pSInterface   = 0;
-   
-   //////////////////////////////
 
-   if((pDA_Interface = CNet.CNInterface.get_pDA_Interface())){
-     
-      int nInterface = scombo.interface.get_active_row_number();
-     
-      S_C_DArray* pCA_F = pDA_Interface->getpItem(nInterface);
-     
-      if(!(pSInterface = (S_Net_Interface*)pCA_F->pData->getpBuffer())){
-         cout << "ERROR: pSInterface" << endl;
-         return;
-      }
-   }
+   const S_Net_Interface* pSInterface = 0;
    
+   pSInterface = CNet.CNInterface.get_pInterface(scombo.interface.get_active_row_number());
+   
+   if(pSInterface == nullptr){
+      cout << "Error get_pInterface:" << scombo.interface.get_active_row_number() << endl;  
+      return; 
+   }
+
    //////////////////////////////
 
    int cPackets = 0;
@@ -151,67 +136,41 @@ void C_App::on_button_send(){
 // [ on_arp_data ]
 //////////////////////////////////////////////////////////////////////////////////
 void C_App::on_arp_data(){
-   C_DArray CDA_TResult;
+   list<S_Arp_Result> CDA_TResult; 
+   list<S_Arp_Result>::iterator iResult;
+   list<S_Arp_Result>::iterator iTResult;
    bool bInsert = true;
   
    m_TreeView.m_refTreeModel->clear();
    
-   for(int n = 0; n < CNet.CDA_Result.getnItems(); n++){
-      C_Array* pCA_Response = 0; 
-      if(!(pCA_Response = CNet.CDA_Result.getpItempData(n))) continue;
-      
-      S_Arp_Result* pSArpResult = 0;    
-      if(!(pSArpResult = (S_Arp_Result*)pCA_Response->getpBuffer())) continue;
-      
-      bInsert = true;
-      
-      for(int m = 0; m < CDA_TResult.getnItems(); m++){
-         C_Array* pCA_TResponse = 0; 
-         if(!(pCA_TResponse = CDA_TResult.getpItempData(m))) continue;
-      
-         S_Arp_Result* pSArpTResult = 0;
-         if(!(pSArpTResult = (S_Arp_Result*)pCA_TResponse->getpBuffer())) continue;
-
-         if(*((DWORD*)pSArpResult->IP) == *((DWORD*)pSArpTResult->IP)){
+   for(iResult = CNet.CDA_Result.begin(); iResult != CNet.CDA_Result.end(); ++iResult){
+      bInsert = true;   
+      for(iTResult = CDA_TResult.begin(); iTResult != CDA_TResult.end(); ++iTResult){
+         if(*((DWORD*)iResult->IP) == *((DWORD*)iTResult->IP)){
             bInsert = false;
             break;
-         }
+         } 
       }
       
-      if(bInsert){
-         C_Array* pCA_TResponse = 0; 
-	 if(!(pCA_TResponse = CDA_TResult.addItem(1, sizeof(S_Arp_Result)))) continue;
-	 
-	 S_Arp_Result* pSArpTResult = 0;
-	 if(!(pSArpTResult = (S_Arp_Result*)pCA_TResponse->getpBuffer())) return;
-	 
-	 memcpy(pSArpTResult, pSArpResult, sizeof(S_Arp_Result));
-      }
+      if(bInsert) CDA_TResult.push_back(*iResult);   
    }
    
-   /////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////////
    
-   for(int m = 0; m < CDA_TResult.getnItems(); m++){
-      C_Array* pCA_TResponse = 0; 
-      if(!(pCA_TResponse = CDA_TResult.getpItempData(m))) continue;
-      
-      S_Arp_Result* pSArpTResult = 0;
-      if(!(pSArpTResult = (S_Arp_Result*)pCA_TResponse->getpBuffer())) continue;
-
-      ////////////////////////////////////////////////
-      
+   for(iTResult = CDA_TResult.begin(); iTResult != CDA_TResult.end(); ++iTResult){
+       
       char pItemIP[256];
       
       sprintf(pItemIP, "%d.%d.%d.%d", 
-             (int)pSArpTResult->IP[0], (int)pSArpTResult->IP[1], 
-             (int)pSArpTResult->IP[2], (int)pSArpTResult->IP[3]);
+             (int)iTResult->IP[0], (int)iTResult->IP[1], 
+             (int)iTResult->IP[2], (int)iTResult->IP[3]);
       
       char pItemMAC[256];
       
       sprintf(pItemMAC, "%02X:%02X:%02X:%02X:%02X:%02X", 
-             (int)pSArpTResult->MAC[0], (int)pSArpTResult->MAC[1], 
-             (int)pSArpTResult->MAC[2], (int)pSArpTResult->MAC[3],
-             (int)pSArpTResult->MAC[4], (int)pSArpTResult->MAC[5]);
+             (int)iTResult->MAC[0], (int)iTResult->MAC[1], 
+             (int)iTResult->MAC[2], (int)iTResult->MAC[3],
+             (int)iTResult->MAC[4], (int)iTResult->MAC[5]);
       
       ///////////////////////////////////////////////////
 

@@ -4,7 +4,7 @@
 //
 // Net
 //
-// [::Last modi: 01.03.17 L.ey (µ~)::]
+// [::Last modi: 16.08.17 L.ey (µ~)::]
 //
 //
 #ifndef _C_NET_H_
@@ -15,9 +15,8 @@
    #include <string>
    #include <sstream>
    #include <iomanip>
-   
    #include <errno.h>
-   
+   #include <list>
    using namespace std;
  
    #include <sigc++/sigc++.h>
@@ -43,6 +42,8 @@
    
    const int C_NET_ID_ARP = 0xFFAA;
    
+   const int C_NET_BUFFER = 0x1400;
+   
 //////////////////////////////////////////////////////////////////////////////////
 // STRUCT
 //////////////////////////////////////////////////////////////////////////////////
@@ -56,38 +57,38 @@
 // CLASS
 //////////////////////////////////////////////////////////////////////////////////
    
-   class C_Net : public sigc::trackable {
+ class C_Net : public sigc::trackable {
      
-      public:
-	
-         C_Net(){};
-        ~C_Net(){};
+    public:
 
-	 int start();
-	 int send(S_Net_Interface* pSInterface, int cPackets, int cSleep);
+       C_Net(){};
+      ~C_Net(){};
 
-	 ///////////////////////////////////////////////////////////////
+       int start();
+       int send(const S_Net_Interface* pSInterface, int cPackets, int cSleep);
+
+       ///////////////////////////////////////////////////////////////
        
-         C_Net_Interface  CNInterface;
-	 
-	 C_Array CA_Arp;
-	 
-         C_Net_Raw_Arp CNArp;
-	 C_Net_Raw     CNRaw;
-	 
-	 C_DArray CDA_Result;
-	 
-	 /////////////////////////////////////////
-	 
-	 // Recive Signal
-	 void on_arp_data(int id, int cData);
-	 
-	 Glib::Dispatcher sig_arp_data;
+       C_Net_Interface  CNInterface;
 
-      private: 
+       array<unsigned char, C_NET_BUFFER> CA_Arp;
+       
+       C_Net_Raw_Arp CNArp;
+       C_Net_Raw     CNRaw;
 
-         int status;
-   };
+       list<S_Arp_Result> CDA_Result;
+       
+       /////////////////////////////////////////
+
+       // Recive Signal
+       void on_arp_data(int id, int cData);
+
+       Glib::Dispatcher sig_arp_data;
+
+    private: 
+
+       int status;
+ };
  
 #endif // _C_NET_H_
  

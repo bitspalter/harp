@@ -12,7 +12,7 @@
  #define _C_NET_RAW_H_
  
   #include <iostream>
-  
+
   using namespace std;
   
   #include <string.h>
@@ -24,8 +24,7 @@
   
   #include "C_Thread.hpp"
   #include "C_Net_Interface.hpp"
-  #include "C_Array.hpp" 
- 
+
   #include <sigc++/sigc++.h>
   
 //////////////////////////////////////////////////////////////////////////////////
@@ -42,14 +41,14 @@
          C_Net_Raw();  
         ~C_Net_Raw();  
 
-         int open(S_Net_Interface* pSInterface);
+         int open(const S_Net_Interface* pSInterface);
          int close();
 
          int send(unsigned char* pData, unsigned int cData);
          int recv();
 
-	 // Non Blocking
-         int start(int id, C_Array* pCArray);
+         // Non Blocking
+         int start(int id, unsigned char* pBuffer, unsigned int cBuffer);
          int stop();
 
          ///////////////////////////////
@@ -57,20 +56,20 @@
          // Inline 
          //
          bool bRunning(){return(bRun);};
-	 
-	 int getSocket(){return(sockfd);};
-	 
+
+         int getSocket(){return(sockfd);};
+
          // Signal
          typedef sigc::signal<void, int, int> type_signal_data;
-	 type_signal_data signal_data();
-	 
+         type_signal_data signal_data();
+
       protected:
          type_signal_data m_signal_data;
-	 
+
       private:
-	
+
          struct sockaddr_ll socket_address;
-	 
+
          int  sockfd;
 
          bool bOpen;
@@ -81,11 +80,13 @@
          C_Thread <C_Net_Raw> CThread;
 
          void run();
-	 
+
          int  id;
-	 
+
          /////////////////
-	 C_Array* pCAData;
+         
+         unsigned char* pBuffer;
+         unsigned int   cBuffer;
    };
 
 #endif // _C_NET_RAW_H_
