@@ -108,6 +108,10 @@ void C_App::on_button_send(){
 
    //////////////////////////////
 
+   m_TreeView.m_refTreeModel->clear();
+   
+   //////////////////////////////
+   
    int cPackets = 0;
    
    int type = scombo.count.get_active_row_number();
@@ -140,9 +144,7 @@ void C_App::on_arp_data(){
    list<S_Arp_Result>::iterator iResult;
    list<S_Arp_Result>::iterator iTResult;
    bool bInsert = true;
-  
-   m_TreeView.m_refTreeModel->clear();
-   
+
    for(iResult = CNet.CDA_Result.begin(); iResult != CNet.CDA_Result.end(); ++iResult){
       bInsert = true;   
       for(iTResult = CDA_TResult.begin(); iTResult != CDA_TResult.end(); ++iTResult){
@@ -152,26 +154,26 @@ void C_App::on_arp_data(){
          } 
       }
       
-      if(bInsert) CDA_TResult.push_back(*iResult);   
+      if(bInsert) CDA_TResult.push_back(*iResult);
    }
-   
+
    /////////////////////////////////////////////////////////////////////////////////
-   
+
    for(iTResult = CDA_TResult.begin(); iTResult != CDA_TResult.end(); ++iTResult){
-       
+
       char pItemIP[256];
-      
+
       sprintf(pItemIP, "%d.%d.%d.%d", 
              (int)iTResult->IP[0], (int)iTResult->IP[1], 
              (int)iTResult->IP[2], (int)iTResult->IP[3]);
-      
+
       char pItemMAC[256];
-      
+
       sprintf(pItemMAC, "%02X:%02X:%02X:%02X:%02X:%02X", 
              (int)iTResult->MAC[0], (int)iTResult->MAC[1], 
              (int)iTResult->MAC[2], (int)iTResult->MAC[3],
              (int)iTResult->MAC[4], (int)iTResult->MAC[5]);
-      
+
       ///////////////////////////////////////////////////
 
       Gtk::TreeModel::iterator iter = m_TreeView.m_refTreeModel->append();
@@ -180,7 +182,7 @@ void C_App::on_arp_data(){
       row.set_value(0, m_TreeView.m_refTreeModel->children().size());
       row.set_value(1, (Glib::ustring)pItemIP);
       row.set_value(2, (Glib::ustring)pItemMAC);
-   
+
       // autoscroll
       Gtk::TreeModel::Path path = m_TreeView.m_refTreeModel->get_path(iter);
       m_TreeView.scroll_to_row(path);
