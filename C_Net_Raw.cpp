@@ -8,8 +8,7 @@
 // [Konstructor]  
 //////////////////////////////////////////////////////////////////////////////////
 C_Net_Raw::C_Net_Raw(){
-   bOpen = false;
-   bRun  = false;
+   bOpen = bRun = false;
 }
 //////////////////////////////////////////////////////////////////////////////////
 // [Destructor]  
@@ -29,7 +28,7 @@ int C_Net_Raw::open(const S_Net_Interface* pSInterface){
    socket_address.sll_halen   = 6;
    
    if((sockfd = socket(AF_PACKET, SOCK_RAW, 0x0300)) == -1){
-      cout << "ERROR: socket " << strerror(errno) << endl;
+      cout << "ERROR: socket " << strerror(errno) << " Nr:" << errno << endl;
       return(C_NET_RAW_ERROR);
    }
    
@@ -43,7 +42,12 @@ int C_Net_Raw::open(const S_Net_Interface* pSInterface){
    ioctl(sockfd, SIOCGIFFLAGS, &ifopts);
    ifopts.ifr_flags |= IFF_PROMISC;
    ioctl(sockfd, SIOCSIFFLAGS, &ifopts);
-
+   
+   /////////////////////////////
+   //struct timeval tv;
+   //tv.tv_sec = 30;  /* 30 Secs Timeout */
+   //setsockopt(sockid, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
+   
    return(C_NET_RAW_READY);
 }
 //////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +71,7 @@ int C_Net_Raw::send(unsigned char* pData, unsigned int cData){
    if(bOpen){
       if(pData != 0 && cData > 0){
          if(sendto(sockfd, pData, cData, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0){
-            cout << "ERROR: send " << strerror(errno) << endl;
+            cout << "ERROR: send " << strerror(errno) << " Nr:" << errno << endl;
             return(C_NET_RAW_ERROR);
          }
       }
@@ -88,9 +92,11 @@ int C_Net_Raw::start(int idEx, unsigned char* pBuf, unsigned int cBuf){
    id      = idEx;
    ////////////
    
-   if(CThread.create(this, &C_Net_Raw::run) == C_THREAD_READY){
-      bRun = true;
-   }else return(C_NET_RAW_ERROR);
+   m_thread = thread([this]{this->run();});
+   
+   m_thread.detach();
+   
+   bRun = true;
    
    return(C_NET_RAW_READY);
 }
@@ -98,38 +104,24 @@ int C_Net_Raw::start(int idEx, unsigned char* pBuf, unsigned int cBuf){
 // [stop]  
 //////////////////////////////////////////////////////////////////////////////////
 int C_Net_Raw::stop(){
-  if(!bRun || !bOpen) return(C_NET_RAW_ERROR);
-   CThread.terminate();
-   bRun = false;
-   return(C_NET_RAW_READY);
-}
-//////////////////////////////////////////////////////////////////////////////////
-// [recv]  
-//////////////////////////////////////////////////////////////////////////////////
-int C_Net_Raw::recv(){
+    
+   if(!bRun || !bOpen) return(C_NET_RAW_ERROR);
 
-   if(CThread.create(this, &C_Net_Raw::run) == C_THREAD_READY){
-      bRun = true;
-   }else return(C_NET_RAW_ERROR);
-   
+   bRun = false;
+  
    return(C_NET_RAW_READY);
 }
 //////////////////////////////////////////////////////////////////////////////////
-// [run]  
+// [run] (thread)
 //////////////////////////////////////////////////////////////////////////////////
 void C_Net_Raw::run(){
 
-   struct sockaddr sa;
-   
    int cData  = 0;
-   int sa_len = sizeof(sa);
-   
+
    while(bRun){
-      cData = recvfrom(sockfd, pBuffer, cBuffer, 0, &sa, (socklen_t*) &sa_len);
+      cData = recvfrom(sockfd, pBuffer, cBuffer, 0, 0, 0);
       if(cData > 0) m_signal_data.emit(id, cData);
    }
-   
-   return;
 }
 //////////////////////////////////////////////////////////////////////////////////
 // [signal_data]

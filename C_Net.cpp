@@ -63,8 +63,7 @@ int C_Net::send(const S_Net_Interface* pSInterface, int cPackets, int cSleep){
 
    CNArp.getPacket(pData, &cData, &sArp);
    
-   ETHERNET_HEADER* pRCV_ethhdr = (ETHERNET_HEADER*)pData;
-   ARP_HEADER*      pRCV_arp    = (ARP_HEADER*)(pData + cETHERNET_HEADER);
+   ARP_HEADER* pRCV_arp = (ARP_HEADER*)(pData + cETHERNET_HEADER);
       
    CDA_Result.clear();
    
@@ -102,7 +101,7 @@ int C_Net::send(const S_Net_Interface* pSInterface, int cPackets, int cSleep){
 void C_Net::on_arp_data(int id, int cData){
    if(id == C_NET_ID_ARP){
      
-      if(cData < cETHERNET_HEADER + cARP_HEADER) return;
+      if(cData < (int)(cETHERNET_HEADER + cARP_HEADER)) return;
 
       UCHAR* pBuffer = &CA_Arp[0];
       
