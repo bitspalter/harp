@@ -1,0 +1,30 @@
+//////////////////////////////////////////////////////////////////////////////////
+// [ Raw_Arp_Class_Header ] 
+//////////////////////////////////////////////////////////////////////////////////
+//
+//
+// [::Last modi: 03.01.17 L.ey (µ~)::]  
+//
+//
+#ifndef _C_NET_RAW_ARP_H_
+ #define _C_NET_RAW_ARP_H_
+
+ #include "Net_Protokoll_Header.hpp"
+
+//////////////////////////////////////////////////////////////////////////////////
+
+  static const DWORD C_NET_RAW_ARP_READY = 0x01;
+  static const DWORD C_NET_RAW_ARP_ERROR = 0x00;
+
+//////////////////////////////////////////////////////////////////////////////////
+
+ class C_Net_Raw_Arp {
+    public: 
+
+      C_Net_Raw_Arp(){};  
+     ~C_Net_Raw_Arp(){}; 
+
+      DWORD getPacket(UCHAR* pData, DWORD* pcData, S_ArpPacket* pS_ArpPacket);
+ };
+
+#endif // _C_NET_RAW_ARP_H_
