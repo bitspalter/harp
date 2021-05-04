@@ -1,7 +1,7 @@
 # harp (alpha)
 
 1. compile:
-g++ *.cpp -std=c++11 -no-pie -o start -Wall \`pkg-config gtkmm-3.0 --cflags --libs\` -lcap
+g++ *.cpp -std=c++11 -no-pie -o harp -Wall \`pkg-config gtkmm-3.0 --cflags --libs\` -lcap
 
 2. set capabilities for raw socket and promiscuous mode as non root:
 
